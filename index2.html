@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ECharts map Demo</title>
+</head>
+<body>
+<div id="map-wrap" style="height: 500px;">
+    <!-- 这里以后是地图 -->
+</div>
+</body>
+<script type="text/javascript" src="jquery.js"></script>
+<script src="dep/echarts.min.js"></script>
+<script src="map/js/world.js"></script>
+<script src="map/json/level2.js"></script>
+<script type="text/javascript">
+    $.get('map/json/world.json', function (worldJson) {
+        echarts.registerMap('world', worldJson); // 注册地图
+        var worldVals = [];
+            var mapChart = echarts.init(document.getElementById('map-wrap'));
+            var data = [
+
+                {name: '干尼亚', value: 169},
+                {name: '德国', value: 175},
+                {name: '所罗门群岛', value: 177},
+                {name: '美国', value: 193},
+                {name: '英国', value: 194},
+                {name: '法国', value: 229},
+                {name: '印度', value: 273},
+                {name: '大庆', value: 532},
+                {name: '巴西', value: 536},
+                {name: '布隆迪', value: 175},
+                {name: '巴哈马', value: 277},
+                {name: '巴基斯坦', value: 193},
+                {name: '波兰', value: 194},
+                {name: '瑞士', value: 532},
+                {name: '泉州', value: 321},
+                {name: '北京', value: 400}
+            ];
+            var convertData = function (data) {
+                var res = [];
+                for (var i = 0; i < data.length; i++) {
+                    var geoCoord = geoCoordMap[data[i].name];
+                    if (geoCoord) {
+                        res.push({
+                            name: data[i].name,
+                            value: geoCoord.concat(data[i].value)
+                        });
+                        worldVals.push(data[i].value)
+                    }
+                }
+                maxChina = Math.max.apply(null, worldVals);
+                return res;
+            };
+            var option = {
+                backgroundColor: 'rgba(7,25,39,0.2)',
+                title: {
+                    text: ''
+                },
+                tooltip: {
+                    formatter: function (params, ticket, callback) {
+                        return params.data.name+":"+params.value[2];
+                    }
+                },
+                visualMap: {
+                    show:false,
+                    min: 0,
+                    max: 200,calculable: false,
+                    inRange: {
+                        color: [ '#D250FF', '#65F6F3','#FCA5F7']
+                    },
+                    textStyle: {
+                        color: '#fff'
+                    }
+                },
+                geo: {
+                    map: "world",
+                    label: {
+                        emphasis: {
+                            show: false
+                        }
+                    },
+                    roam: false,
+                    itemStyle: {
+                        normal: {
+                            areaColor: '#2D2F3F',
+                            borderColor: 'rgba(100,149,237,1)'
+                        },
+                        emphasis: {
+                            areaColor: '#404A59'
+                        }
+                    },
+                    layoutCenter: ['50%', '50%']
+                },
+                series : [
+                    {
+                        name: '',
+                        type: 'scatter',
+                        coordinateSystem: 'geo'
+                        ,
+                        data: convertData(data), //                    data:myData,
+                        symbolSize: function (val,params) {
+                            return Math.round(3 + val[2] * 10 / maxChina);
+                        },
+                        label: {
+                            normal: {
+                                formatter: '{b}',
+                                position: 'right',
+                                show: false
+                            },
+                            emphasis: {
+                                show: true
+                            }
+                        },
+                        itemStyle: {
+                            normal: {
+                                color: '#ddb926'
+                            }
+                        }
+                    }
+                ]
+                /*  series: [
+                    {
+                        name: '',
+                        type: 'scatter',
+                        coordinateSystem: 'geo',
+                        data: myData // series数据内容
+                    }
+                ]*/
+            }
+            mapChart.setOption(option);
+//        })
+
+    });
+
+
+
+</script>
+</html>

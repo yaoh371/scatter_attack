@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ECharts map Demo</title>
+</head>
+<body>
+<div style="width: 100%;height:500px" class="heatChina">
+    <div id="main2" style=" width:100%;height:100%;"></div>
+</div>
+<div class="heatWorld" style="width: 200px;height: 100px;position: absolute;right: 10px;z-index: 99;top: 10px;">
+    <div id="main3" style=" width:100%;height:100%;"></div>
+</div>
+<!--遮罩-->
+<div style="width: 200px;height:100px;position: absolute;right: 10px;z-index: 100;top: 10px;" id="tabMain"></div>
+
+</body>
+<script type="text/javascript" src="jquery.js"></script>
+<script src="dep/echarts.min.js"></script>
+<!--<script type="text/javascript" src="../js/echart/echarts.js"></script>-->
+<script src="map/js/world.js"></script>
+<script src="map/js/china.js"></script>
+<script src="map/json/level2.js"></script>
+<script type="text/javascript">
+    //热力图   国际data.data2  国内data.data3
+    $('#main2').css({
+        'height': $(".heatChina").height(),
+        'width': $(".heatChina").width()
+    });
+    $('#main3').css({
+        'height': $(".heatWorld").height(),
+        'width': $(".heatWorld").width()
+    });
+    // 国内data.data3
+    jQuery(function () {
+        var chinaTu=function (city,data) {
+            //销毁实例
+            //var chinaMap = echarts.getInstanceByDom(document.getElementById('main2'));
+            //echarts.dispose(chinaMap);
+
+            // 初始化地图
+            var myChina = echarts.init(document.getElementById('main2'));
+            var maxChina  = null;
+            var convertData = function (data) {
+                var res = [];
+                var chinaVals = [];
+                for (var i = 0; i < data.length; i++) {
+                    var geoCoord = geoCoordMap[data[i].name];
+                    if (geoCoord) {
+                        res.push({
+                            name: data[i].name,
+                            value: geoCoord.concat(data[i].value)
+                        });
+                        chinaVals.push(data[i].value)
+                    }
+                }
+                maxChina = Math.max.apply(null, chinaVals);
+                return res;
+            };
+            var option = {
+                backgroundColor: 'rgba(7,25,39,0.2)',
+                title: {
+                    text: ''
+                },
+                tooltip: {
+                    formatter: function (params, ticket, callback) {
+                        return params.data.name+":"+params.value[2];
+                    }
+                },
+                visualMap: {
+                    show:false,
+                    min: 0,
+                    max: 200,calculable: false,
+                    inRange: {
+                        color: [ '#D250FF', '#65F6F3','#FCA5F7']
+                    },
+                    textStyle: {
+                        color: '#fff'
+                    }
+                },
+                geo: {
+                    map: city,
+                    label: {
+                        emphasis: {
+                            show: false
+                        }
+                    },
+                    roam: false,
+                    itemStyle: {
+                        normal: {
+                            areaColor: '#2D2F3F',
+                            borderColor: 'rgba(100,149,237,1)'
+                        },
+                        emphasis: {
+                            areaColor: '#404A59'
+                        }
+                    },
+                    layoutCenter: ['50%', '50%']
+                },
+                series : [
+                    {
+                        name: '',
+                        type: 'scatter',
+                        coordinateSystem: 'geo',
+                        data: convertData(data),
+                        symbolSize: function (val,params) {
+                            return Math.round(4 + val[2] * 10 / maxChina);
+                        },
+                        label: {
+                            normal: {
+                                formatter: '{b}',
+                                position: 'right',
+                                show: false
+                            },
+                            emphasis: {
+                                show: true
+                            }
+                        },
+                        itemStyle: {
+                            normal: {
+                                color: '#ddb926'
+                            }
+                        }
+                    }
+                ]
+            }
+            // 为echarts对象加载数据
+            myChina.clear();
+            myChina.setOption(option,true);
+            maxChina  = null;
+            option={};
+            //用于使chart自适应高度和宽度
+            window.onresize=function () {
+                //重置容器高宽
+                $('#main2').css({
+                    'height': $(".heatChina").height()-30,
+                    'width': $(".heatChina").width()
+                });
+            }
+            myChina.resize = window.onresize;
+        }
+        var worldTu=function (city,data) {
+            //销毁实例
+            //var worldMap = echarts.getInstanceByDom(document.getElementById('main3'));
+            //echarts.dispose(worldMap);
+
+            // 初始化地图
+            var myWorld = echarts.init(document.getElementById('main3'));
+            var maxWorld  = null;
+            var convertData = function (data) {
+                var res = [];
+                var worldVals = [];
+                for (var i = 0; i < data.length; i++) {
+                    var geoCoord = geoCoordMap[data[i].name];
+                    if (geoCoord) {
+                        res.push({
+                            name: data[i].name,
+                            value: geoCoord.concat(data[i].value)
+                        });
+                        worldVals.push(data[i].value)
+                    }
+                }
+                maxWorld = Math.max.apply(null, worldVals);
+                return res;
+            };
+            var option = {
+                backgroundColor: 'rgba(7,25,39,0.2)',
+                title: {
+                    text: ''
+                },
+                tooltip: {
+                    formatter: function (params, ticket, callback) {
+                        return params.data.name+":"+params.value[2];
+                    }
+                },
+                visualMap: {
+                    show:false,
+                    min: 0,
+                    max: 200,
+                    calculable: false,
+                    inRange: {
+                        color: [ '#D250FF', '#65F6F3','#FCA5F7']
+                    },
+                    textStyle: {
+                        color: '#fff'
+                    }
+                },
+                geo: {
+                    map: city,
+                    label: {
+                        emphasis: {
+                            show: false
+                        }
+                    },
+                    roam: false,
+                    itemStyle: {
+                        normal: {
+                            areaColor: '#2D2F3F',
+                            borderColor: 'rgba(100,149,237,1)'
+                        },
+                        emphasis: {
+                            areaColor: '#404A59'
+                        }
+                    },
+                    layoutCenter: ['50%', '50%']
+                },
+                series : [
+                    {
+                        name: '',
+                        type: 'scatter',
+                        coordinateSystem: 'geo',
+                        data: convertData(data),
+                        symbolSize: function (val,params) {
+//                                console.log( maxWorld)
+                            return Math.round(4 + val[2] * 10 / maxWorld);
+                        },
+                        label: {
+                            normal: {
+                                formatter: '{b}',
+                                position: 'right',
+                                show: false
+                            },
+                            emphasis: {
+                                show: true
+                            }
+                        },
+                        itemStyle: {
+                            normal: {
+                                color: '#ddb926'
+                            }
+                        }
+                    }
+                ]
+            }
+            // 为echarts对象加载数据
+            myWorld.clear();
+            myWorld.setOption(option,true);
+            maxWorld  = null;
+            option={};
+
+            //用于使chart自适应高度和宽度
+            window.onresize=function () {
+                //重置容器高宽
+                $('#main3').css({
+                    'height': $(".heatWorld").height(),
+                    'width': $(".heatWorld").width()
+                });
+            }
+            myWorld.resize = window.onresize;
+        }
+
+        //国内热力攻击图 data
+        var data = [
+            {name: '海门', value: 29},
+            {name: '鄂尔多斯', value: 12},
+            {name: '招远', value: 44},
+            {name: '舟山', value: 102},
+            {name: '齐齐哈尔', value: 14},
+            {name: '盐城', value: 15},
+            {name: '江苏', value: 16},
+            {name: '南京', value: 55},
+            {name: '西藏', value: 66},
+            {name: '乌鲁木齐', value: 77},
+            {name: '深圳', value: 88},
+            {name: '云南', value: 99},
+            {name: '长沙', value: 100}
+        ];
+        var data2 = [
+            {name: '干尼亚', value: 169},
+            {name: '德国', value: 175},
+            {name: '所罗门群岛', value: 177},
+            {name: '美国', value: 193},
+            {name: '英国', value: 194},
+            {name: '法国', value: 229},
+            {name: '印度', value: 273},
+            {name: '大庆', value: 532},
+            {name: '巴西', value: 536},
+            {name: '布隆迪', value: 175},
+            {name: '巴哈马', value: 277},
+            {name: '巴基斯坦', value: 193},
+            {name: '波兰', value: 194},
+            {name: '瑞士', value: 532},
+            {name: '中国', value: 321},
+            {name: '奥地利', value: 400}
+        ];
+
+        chinaTu('china',data);
+        //国际热力攻击图 data2
+
+        worldTu('world',data2);
+
+
+        //实时（每6秒）入一条新的数据：
+   /*     var newChinaData=[
+            {name: '银川', value: 929},
+            {name: '哈尔滨', value: 12},
+            {name: '济南', value: 44},
+            {name: '准格尔', value: 102},
+            {name: '抚州', value: 14},
+            {name: '汉口', value: 15},
+            {name: '大理', value: 16},
+            {name: '西双版纳', value: 55},
+            {name: '开封', value: 66},
+            {name: '洛阳', value: 77},
+            {name: '广州', value: 88},
+            {name: '广西', value: 99},
+            {name: '张家口', value: 100},
+            {name: '北京', value: 929},
+            {name: '泉州', value: 1032},
+            {name: '南昌', value: 404},
+            {name: '武汉', value: 302},
+            {name: '合肥', value: 214},
+            {name: '福州', value: 315},
+            {name: '昆明', value: 416},
+            {name: '成都', value: 505},
+            {name: '拉萨', value: 866},
+            {name: '三亚', value: 277},
+            {name: '南京', value: 98},
+            {name: '苏州', value: 199},
+            {name: '兰州', value:900}
+        ];
+        var newWorldData=[
+            {name: '挪威', value: 329},
+            {name: '芬兰', value: 232},
+            {name: '爱琴海', value: 414},
+            {name: '阿根廷', value: 402},
+            {name: '莫斯科', value: 514},
+            {name: '新加坡', value: 215},
+            {name: '马来西亚', value: 116},
+            {name: '文莱', value: 155},
+            {name: '澳洲', value: 266},
+            {name: '加拿大', value: 577},
+            {name: '墨西哥', value: 298},
+            {name: '蒙古国', value: 399},
+            {name: '孟加拉', value:300}
+        ];
+
+          var j=0;
+          var m=0;
+            var chinaInterval = setInterval(function () {
+                j++;
+                for (var i = 0; i < newChinaData.length; i++) {
+                    if(j<=newChinaData.length){
+                        if(j-1==i){
+                                console.log(j-1,newChinaData[j-1]);
+                        data.push(newChinaData[j-1])
+                                console.log(data);
+                            chinaTu('china',data);
+                        }
+                    }else{
+                        clearInterval(chinaInterval);
+                    }
+                }
+            },6000) //6000才能同步入值*/
+
+        //每个60秒刷新一次数据
+        setTimeout(function repeatMe() {
+            chinaTu('china',data);
+            worldTu('world',data2);
+            setTimeout(repeatMe, 60000*10);
+        }, 60000*10);
+
+        //点击地图切换窗口
+        $('#tabMain').toggle(function(){
+            worldTu('china',data);
+            chinaTu('world',data2);
+        },function(){
+            worldTu('world',data2);
+            chinaTu('china',data);
+        })
+    })
+
+
+
+</script>
+</html>

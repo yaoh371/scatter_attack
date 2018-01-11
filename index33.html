@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ECharts map Demo</title>
+</head>
+<body>
+<div style="width: 100%;height:500px" class="heatChina">
+    <div id="main2" style=" width:100%;height:100%;"></div>
+</div>
+<div class="heatWorld" style="width: 200px;height: 100px;position: absolute;right: 10px;z-index: 99;top: 10px;">
+    <div id="main3" style=" width:100%;height:100%;"></div>
+</div>
+<!--遮罩-->
+<div style="width: 200px;height:100px;position: absolute;right: 10px;z-index: 100;top: 10px;" id="tabMain"></div>
+
+</body>
+<script type="text/javascript" src="jquery.js"></script>
+<script src="dep/echarts.min.js"></script>
+<!--<script type="text/javascript" src="../js/echart/echarts.js"></script>-->
+<script src="map/js/world.js"></script>
+<script src="map/js/china.js"></script>
+<script src="map/json/level2.js"></script>
+<script type="text/javascript">
+    //热力图   国际data.data2  国内data.data3
+    $('#main2').css({
+        'height': $(".heatChina").height(),
+        'width': $(".heatChina").width()
+    });
+    $('#main3').css({
+        'height': $(".heatWorld").height(),
+        'width': $(".heatWorld").width()
+    });
+    // 国内data.data3
+    jQuery(function () {
+        var moveTu=function (city,data,pos1) {// city:china/world   data数据  POS1攻击地
+            //销毁实例
+            //var chinaMap = echarts.getInstanceByDom(document.getElementById('main2'));
+            //echarts.dispose(chinaMap);
+            var myChart = echarts.init(document.getElementById('main2'));
+
+            var convertData = function (data) {
+                var res = [];
+                for (var i = 0; i < data.length; i++) {
+                    var dataItem = data[i];
+                    var fromCoord = geoCoordMap[pos1];
+                    var toCoord = geoCoordMap[dataItem[0].name];
+                    if (fromCoord && toCoord) {
+                        res.push([
+                            {
+                                coord:fromCoord,
+                                value: dataItem[0].value
+                            },
+                            {
+                                coord: toCoord,
+                            }
+                        ]);
+                    }
+                }
+                return res;
+            };
+
+            var color = ['#a6c84c', '#ffa022', '#46bee9'];
+            var series = [];
+            [[pos1, data]].forEach(function (item, i) {
+                series.push(
+                        {
+                            type: 'lines',  //攻击地发起的攻击线
+                            zlevel: 2,
+                            effect: {
+                                show: true,
+                                period: 1.5, //箭头指向速度，值越小速度越快
+                                trailLength: 0.01,//特效尾迹长度[0,1]值越大，尾迹越长重
+                                symbol:'circle',//箭头图标
+                                symbolSize:2 //图标大小
+                            },
+                            lineStyle: {
+                                normal: {
+                                    width: 0.5,//尾迹线条宽度
+                                    opacity: 0,//尾迹线条透明度
+                                    curveness: 0 //尾迹线条曲直度
+                                }
+                            },
+                            data: convertData(item[1])   //data
+                        },
+                        {//被攻击点样式
+                            type: 'effectScatter',
+                            coordinateSystem: 'geo',
+                            zlevel: 2,
+                            rippleEffect: {//涟漪特效
+                                period:4,//动画时间，值越小速度越快
+                                brushType: 'stroke', //波纹绘制方式 stroke, fill
+                                scale: 4 //波纹圆环最大限制，值越大波纹越大
+                            },
+                            label: {
+                                normal: {
+                                    show: true,
+                                    position: 'right',//显示位置
+                                    offset:[5, 0], //偏移设置
+                                    formatter: '{b}' //圆环显示文字
+                                },
+                                emphasis: {
+                                    show: true
+                                }
+                            },
+                            symbol: 'circle',
+                            symbolSize: function (val) {
+                                return 4 + val[2] / 10; //圆环大小
+                            },
+                            itemStyle: {
+                                normal: {
+                                    show: false,
+                                    color: '#f00'
+                                }
+                            },
+                            data: item[1].map(function (dataItem) {
+                                var objTem = {
+                                    name: dataItem[0].name,
+                                    value: geoCoordMap[dataItem[0].name].concat([dataItem[0].value])
+                                }
+                                return objTem;
+                            })
+                        },
+
+                        {//天津攻击地 攻击点样式
+                            type: 'scatter',
+                            coordinateSystem: 'geo',
+                            zlevel: 2,
+                            rippleEffect: {
+                                period:4,
+                                brushType: 'stroke',
+                                scale: 4
+                            },
+                            label: {
+                                normal: {
+                                    show: true,
+                                    position: 'right',
+//			                offset:[5, 0],
+
+                                    color:'#00ffff',
+                                    formatter: '{b}',
+                                    textStyle: {
+                                        color:"#00ffff"
+                                    }
+                                },
+                                emphasis: {
+                                    show: true
+                                }
+                            },
+                            symbol: 'pin',
+                            symbolSize:30,
+                            itemStyle: {
+                                normal: {
+                                    show: true,
+                                    color: '#9966cc'
+                                }
+                            },
+                            data:[{
+                                name: item[0],
+                                value: geoCoordMap[item[0]].concat([100])   //POS1
+                            }]
+                        }
+                );
+            });
+
+            option = {
+                backgroundColor: '#404a59',
+                title: {
+                    text: '攻击地图',
+                    textStyle:{
+                        color:'#fff',
+                        fontSize:20
+                    },
+                    padding:[20,20,20,20]
+                },
+                tooltip : {
+                    trigger : 'item',
+                    backgroundColor:'rgba(12, 204, 104, 0.92)',
+                    borderColor:'#FFFFCC',
+                    showDelay : 0,
+                    hideDelay : 0,
+                    enterable:true,
+                    transitionDuration : 0,
+                    extraCssText:'z-index:100',
+                    formatter : function(params, ticket, callback) {
+                        //根据业务自己拓展要显示的内容
+                        var res = "";
+                        var name = params.name;
+                        var value = params.value;
+                        res = "<span style='color:red;'>"+name+"</span><br/>坐标："+value;
+                        return res;
+                    }
+                },
+                visualMap: { //图例值控制
+                    min : 0,
+                    max : 100,
+                    calculable : true,
+                    color: ['#ff3333', 'orange', 'yellow','lime','aqua'],
+                    textStyle:{
+                        color:'#fff'
+                    }
+                },
+                geo: {
+                    map: city,
+                    label: {
+                        emphasis: {
+                            show: false
+                        }
+                    },
+                    roam: true, //是否允许缩放
+                    layoutCenter: ['50%', '53%'], //地图位置
+                    layoutSize:"108%",
+                    itemStyle: {
+                        normal: {
+                            color: 'rgba(51, 69, 89, .5)', //地图背景色
+                            borderColor: 'rgba(100,149,237,1)' //省市边界线
+                        },
+                        emphasis: {
+                            color: 'rgba(37, 43, 61, .5)'//悬浮背景
+                        }
+                    }
+                },
+
+                series: series
+            };
+
+            var counts = option.series[0].data.length; //获取所有闪动圆环数量
+            var dataIndex = 0;
+            //让圆环的提示框自动触发轮播显示
+            function autoHoverTip(){
+                for(var i = 0;i<counts;i++){
+                    (function (i) {
+                        ts = setTimeout(function () {
+                            myChart.dispatchAction({
+                                type: 'showTip',
+                                seriesIndex: 1,
+                                dataIndex: i
+                            });
+                        }, 5000*i);
+                    })(i);
+                }
+            }
+
+            setTimeout(function() {
+                autoHoverTip();
+                tv = setInterval(autoHoverTip, counts*5600);
+            }, 500);
+
+
+            myChart.setOption(option,true);
+
+            window.onresize=function () {
+                //重置容器高宽
+                $('#main2').css({
+                    'height': $(".heatChina").height()-30,
+                    'width': $(".heatChina").width()
+                });
+            }
+            myChart.resize = window.onresize;
+        }
+
+        var BJData = [
+            [{name:'上海',value:100}],
+            [{name:'丽江',value:70}],
+            [{name:'常德',value:30}],
+            [{name:'漳州',value:50}],
+            [{name:'厦门',value:20}],
+            [{name:'黑河',value:10}],
+            [{name:'吉林',value:80}],
+            [{name:'西安',value:55}],
+            [{name:'乌鲁木齐',value:90}]
+        ];
+
+        //实时（每6秒）入一条新的数据,去掉每一次新数组的第一个：
+         var newChinaData=[
+             [{name: '银川', value: 29}],
+             [{name: '哈尔滨', value: 12}],
+             [{name: '济南', value: 44}],
+             [{name: '准格尔', value: 102}],
+             [{name: '抚州', value: 14}],
+             [{name: '汉口', value: 15}],
+             [{name: '大理', value: 16}],
+             [{name: '高雄', value: 55}],
+             [{name: '开封', value: 66}],
+             [{name: '洛阳', value: 77}],
+             [{name: '广州', value: 88}],
+             [{name: '广西', value: 99}],
+             [{name: '张家口', value: 100}],
+             [{name: '北京', value: 99}],
+             [{name: '泉州', value: 32}],
+             [{name: '南昌', value: 40}],
+             [{name: '武汉', value: 32}],
+             [{name: '合肥', value: 24}],
+             [{name: '福州', value: 35}],
+             [{name: '昆明', value: 46}],
+             [{name: '成都', value: 50}],
+             [{name: '拉萨', value: 66}],
+             [{name: '三亚', value: 277}],
+             [{name: '南京', value: 98}],
+             [{name: '苏州', value: 199}],
+             [{name: '兰州', value:90}]
+         ];
+        moveTu('china',BJData,'天津');
+
+        var j=0;
+        var chinaInterval = setInterval(function () {
+            j++;
+            for (var i = 0; i < newChinaData.length; i++) {
+                if(j<=newChinaData.length){
+                    if(j-1==i){
+                        //console.log(j-1,newChinaData[j-1]);
+                        BJData.push(newChinaData[j-1])
+                        BJData.shift(0)
+                        //console.log(BJData);
+                        moveTu('china',BJData,'天津');
+                    }
+                }else{
+                    clearInterval(chinaInterval);
+                }
+            }
+        },6000) //6000才能同步入值
+
+
+    })
+
+
+
+</script>
+</html>
